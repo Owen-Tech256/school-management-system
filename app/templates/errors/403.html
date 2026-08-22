@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Access restricted{% endblock %}
+{% block content %}
+<div class="error-state">
+  <div class="error-state__icon"><i class="fa-solid fa-lock"></i></div>
+  <h3>Access restricted</h3>
+  <p>Your account doesn't have permission to view this page.</p>
+  <a href="{{ url_for('index') }}" class="btn btn-primary">Back to dashboard</a>
+</div>
+{% endblock %}

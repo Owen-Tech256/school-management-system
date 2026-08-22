@@ -1,0 +1,90 @@
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar__brand">
+    <div class="brand-mark"><i class="fa-solid fa-graduation-cap"></i></div>
+    <div class="brand-text">
+      <span class="brand-name">{{ school_name }}</span>
+      <span class="brand-subtitle">Attendance &amp; Accountability</span>
+    </div>
+  </div>
+
+  <nav class="sidebar__nav">
+    {% if current_user.role == "teacher" %}
+      <div class="nav-group">
+        <span class="nav-group__label">OVERVIEW</span>
+        <a class="nav-link {% if request.endpoint == 'teacher.dashboard' %}nav-link--active{% endif %}" href="{{ url_for('teacher.dashboard') }}">
+          <i class="fa-solid fa-chart-line"></i><span>Dashboard</span>
+        </a>
+      </div>
+      <div class="nav-group">
+        <span class="nav-group__label">ATTENDANCE</span>
+        <a class="nav-link {% if request.endpoint == 'teacher.my_classes' %}nav-link--active{% endif %}" href="{{ url_for('teacher.my_classes') }}">
+          <i class="fa-solid fa-clipboard-check"></i><span>My Classes</span>
+        </a>
+      </div>
+    {% else %}
+      <div class="nav-group">
+        <span class="nav-group__label">OVERVIEW</span>
+        <a class="nav-link {% if request.endpoint == 'admin.dashboard' %}nav-link--active{% endif %}" href="{{ url_for('admin.dashboard') }}">
+          <i class="fa-solid fa-chart-pie"></i><span>School Overview</span>
+        </a>
+      </div>
+
+      <div class="nav-group">
+        <span class="nav-group__label">ACADEMIC</span>
+        <a class="nav-link {% if request.endpoint == 'admin.students' %}nav-link--active{% endif %}" href="{{ url_for('admin.students') }}">
+          <i class="fa-solid fa-users"></i><span>Students</span>
+        </a>
+        <a class="nav-link {% if request.endpoint == 'admin.classes' %}nav-link--active{% endif %}" href="{{ url_for('admin.classes') }}">
+          <i class="fa-solid fa-school"></i><span>Classes</span>
+        </a>
+        <a class="nav-link {% if request.endpoint == 'admin.subjects' %}nav-link--active{% endif %}" href="{{ url_for('admin.subjects') }}">
+          <i class="fa-solid fa-book"></i><span>Subjects</span>
+        </a>
+        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('admin.timetable') %}nav-link--active{% endif %}" href="{{ url_for('admin.timetable') }}">
+          <i class="fa-solid fa-calendar-days"></i><span>Timetable</span>
+        </a>
+      </div>
+
+      <div class="nav-group">
+        <span class="nav-group__label">ATTENDANCE</span>
+        <a class="nav-link {% if request.endpoint == 'lookup.classes' %}nav-link--active{% endif %}" href="{{ url_for('lookup.classes') }}">
+          <i class="fa-solid fa-magnifying-glass"></i><span>Attendance Lookup</span>
+        </a>
+        <a class="nav-link {% if request.endpoint == 'admin.attendance_flags' %}nav-link--active{% endif %}" href="{{ url_for('admin.attendance_flags') }}">
+          <i class="fa-solid fa-flag"></i><span>Students At Risk</span>
+        </a>
+      </div>
+
+      <div class="nav-group">
+        <span class="nav-group__label">MANAGEMENT</span>
+        {% if current_user.role == "super_admin" %}
+        <a class="nav-link {% if request.endpoint == 'admin.users' %}nav-link--active{% endif %}" href="{{ url_for('admin.users') }}">
+          <i class="fa-solid fa-id-badge"></i><span>Users</span>
+        </a>
+        {% endif %}
+        <a class="nav-link {% if request.endpoint == 'admin.reports' %}nav-link--active{% endif %}" href="{{ url_for('admin.reports') }}">
+          <i class="fa-solid fa-file-chart-column"></i><span>Reports</span>
+        </a>
+        {% if current_user.role == "super_admin" %}
+        <a class="nav-link {% if request.endpoint == 'admin.audit_log' %}nav-link--active{% endif %}" href="{{ url_for('admin.audit_log') }}">
+          <i class="fa-solid fa-clock-rotate-left"></i><span>Audit Log</span>
+        </a>
+        <a class="nav-link {% if request.endpoint == 'admin.terms' %}nav-link--active{% endif %}" href="{{ url_for('admin.terms') }}">
+          <i class="fa-solid fa-gear"></i><span>Terms &amp; Years</span>
+        </a>
+        {% endif %}
+      </div>
+    {% endif %}
+  </nav>
+
+  <div class="sidebar__profile">
+    <div class="profile-avatar">{{ current_user.full_name[:1] }}</div>
+    <div class="profile-meta">
+      <span class="profile-name">{{ current_user.full_name }}</span>
+      <span class="profile-role">{{ current_user.role_label }}</span>
+    </div>
+    <a href="{{ url_for('auth.logout') }}" class="profile-logout" title="Log out">
+      <i class="fa-solid fa-arrow-right-from-bracket"></i>
+    </a>
+  </div>
+</aside>

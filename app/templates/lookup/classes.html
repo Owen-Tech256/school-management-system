@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Attendance Lookup{% endblock %}
+{% block breadcrumb %}<span class="current">Attendance Lookup</span>{% endblock %}
+{% block content %}
+
+<div class="page-header"><div><h1>Attendance Lookup</h1><p>Select a class to find a student and answer a parent's question in under a minute.</p></div></div>
+
+<div class="card">
+  <form method="GET" style="margin-bottom:18px;">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search classes..." style="max-width:280px;">
+  </form>
+
+  {% if classes %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>Class</th><th>Students</th><th></th></tr></thead>
+      <tbody>
+        {% for c in classes %}
+        <tr onclick="window.location='{{ url_for('lookup.class_students', class_id=c.id) }}'" style="cursor:pointer">
+          <td>{{ c.display_name }}</td>
+          <td class="cell-muted">{{ c.students|selectattr('is_active')|list|length }}</td>
+          <td><a href="{{ url_for('lookup.class_students', class_id=c.id) }}" class="btn btn-outline btn-sm">Open roster</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state__icon"><i class="fa-solid fa-school"></i></div>
+    <h3>No classes found</h3>
+    <p>Try a different search.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

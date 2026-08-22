@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Timetable{% endblock %}
+{% block breadcrumb %}<span class="current">Timetable</span>{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div><h1>Timetable</h1><p>The foundation the entire system depends on — every roll call is generated from this.</p></div>
+  <div class="page-header__actions">
+    <a href="{{ url_for('admin.timetable_import_template') }}" class="btn btn-outline"><i class="fa-solid fa-download"></i> Download template</a>
+    <a href="{{ url_for('admin.timetable_import') }}" class="btn btn-outline"><i class="fa-solid fa-file-import"></i> Bulk import</a>
+  </div>
+</div>
+
+{% if not term %}
+<div class="card">
+  <div class="empty-state">
+    <div class="empty-state__icon"><i class="fa-solid fa-calendar-plus"></i></div>
+    <h3>Set a current term first</h3>
+    <p>The timetable is scoped to a term so historical reports stay accurate.</p>
+    <a href="{{ url_for('admin.terms') }}" class="btn btn-primary">Set up terms</a>
+  </div>
+</div>
+{% elif not classes %}
+<div class="card">
+  <div class="empty-state">
+    <div class="empty-state__icon"><i class="fa-solid fa-school"></i></div>
+    <h3>Create a class first</h3>
+    <a href="{{ url_for('admin.new_class') }}" class="btn btn-primary">Create a class</a>
+  </div>
+</div>
+{% else %}
+
+<div class="card">
+  <form method="GET" class="flex gap-12" style="margin-bottom: 4px;">
+    <select name="class_id" onchange="this.form.submit()" style="max-width:260px;">
+      <option value="">Select a class</option>
+      {% for c in classes %}
+      <option value="{{ c.id }}" {% if selected_class and selected_class.id == c.id %}selected{% endif %}>{{ c.display_name }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
+{% if selected_class %}
+<div class="card">
+  <div class="card__header">
+    <div class="card__title">{{ selected_class.display_name }} — {{ term.name }}</div>
+  </div>
+  <div class="tt-grid">
+    <div class="tt-head"></div>
+    {% for d in days %}<div class="tt-head">{{ d }}</div>{% endfor %}
+
+    {% for p in periods %}
+      <div class="tt-period-label">P{{ p }}</div>
+      {% for d in days %}
+        {% set cell = grid.get((d, p)) %}
+        {% if cell %}
+        <div class="tt-cell tt-cell--filled">
+          <div class="tt-cell__subject">{{ cell.subject.name }}</div>
+          <div class="tt-cell__meta">{{ cell.teacher.full_name }} · {{ cell.room or "No room" }}</div>
+          <div class="tt-cell__meta">{{ cell.start_time.strftime('%H:%M') }}–{{ cell.end_time.strftime('%H:%M') }}</div>
+          <div class="tt-cell-actions">
+            <a href="{{ url_for('admin.timetable_cell', class_id=selected_class.id, day=d, period=p) }}">Edit</a>
+	      <form method="POST" action="{{ url_for('admin.delete_timetable_cell', session_id=cell.id) }}" onsubmit="return confirm('Remove this slot?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit">Remove</button>
+          </div>
+        </div>
+        {% else %}
+        <a class="tt-cell" href="{{ url_for('admin.timetable_cell', class_id=selected_class.id, day=d, period=p) }}">
+          <span class="text-muted" style="font-size:11px;">+ Add</span>
+        </a>
+        {% endif %}
+      {% endfor %}
+    {% endfor %}
+  </div>
+</div>
+{% else %}
+<div class="card">
+  <div class="empty-state">
+    <div class="empty-state__icon"><i class="fa-solid fa-calendar-days"></i></div>
+    <h3>Select a class</h3>
+    <p>Choose a class above to view or build its weekly timetable grid.</p>
+  </div>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}

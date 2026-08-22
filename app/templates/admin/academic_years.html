@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Academic Years{% endblock %}
+{% block breadcrumb %}<a href="{{ url_for('admin.terms') }}">Terms &amp; Years</a> / <span class="current">Academic Years</span>{% endblock %}
+{% block content %}
+
+<div class="page-header"><div><h1>Academic Years</h1><p>Terms and timetables are scoped to a year, so history stays intact as years change.</p></div></div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card__header"><div class="card__title">Add academic year</div></div>
+    <form method="POST" novalidate>
+      {{ form.hidden_tag() }}
+      <div class="form-group">
+        <label>Year label</label>
+        {{ form.label(placeholder="e.g. 2026") }}
+        {% for e in form.label.errors %}<span class="field-errors">{{ e }}</span>{% endfor %}
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Start date</label>
+          {{ form.start_date() }}
+        </div>
+        <div class="form-group">
+          <label>End date</label>
+          {{ form.end_date() }}
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Create</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="card__header"><div class="card__title">Existing years</div></div>
+    {% if years %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Label</th><th>Start</th><th>End</th></tr></thead>
+        <tbody>
+          {% for y in years %}
+          <tr>
+            <td>{{ y.label }}</td>
+            <td class="cell-muted">{{ y.start_date.strftime('%d %b %Y') if y.start_date else "—" }}</td>
+            <td class="cell-muted">{{ y.end_date.strftime('%d %b %Y') if y.end_date else "—" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-state__icon"><i class="fa-solid fa-calendar"></i></div>
+      <h3>No academic years yet</h3>
+      <p>Add your first academic year to unlock terms, classes, and timetables.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

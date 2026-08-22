@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block breadcrumb %}<a href="{{ url_for('admin.classes') }}">Classes</a> / <span class="current">{{ title }}</span>{% endblock %}
+{% block content %}
+
+<div class="page-header"><div><h1>{{ title }}</h1></div></div>
+
+{% if not form.academic_year_id.choices %}
+<div class="card">
+  <div class="empty-state">
+    <div class="empty-state__icon"><i class="fa-solid fa-calendar-plus"></i></div>
+    <h3>Create an academic year first</h3>
+    <p>A class must belong to an academic year.</p>
+    <a href="{{ url_for('admin.academic_years') }}" class="btn btn-primary">Set up academic year</a>
+  </div>
+</div>
+{% else %}
+<div class="card" style="max-width:560px;">
+  <form method="POST" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Level</label>
+        {{ form.level(placeholder="e.g. S1") }}
+        {% for e in form.level.errors %}<span class="field-errors">{{ e }}</span>{% endfor %}
+      </div>
+      <div class="form-group">
+        <label>Stream (optional)</label>
+        {{ form.stream(placeholder="e.g. Blue") }}
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Academic year</label>
+      {{ form.academic_year_id() }}
+    </div>
+    <div class="form-group">
+      <label>Class teacher (optional)</label>
+      {{ form.class_teacher_id() }}
+    </div>
+    <button type="submit" class="btn btn-primary">Create class</button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% block title %}School Overview{% endblock %}
+{% block breadcrumb %}<span class="current">School Overview</span>{% endblock %}
+{% block content %}
+
+<div class="hero">
+  <div>
+    <h2>Good day, {{ current_user.full_name.split(' ')[0] }}</h2>
+    <p>Here is today's attendance overview.</p>
+  </div>
+  <div class="hero__meta">
+    <div class="hero__meta-item">
+      <span class="hero__meta-label">Date</span>
+      <span class="hero__meta-value"><span id="todayDate"></span></span>
+    </div>
+    <div class="hero__meta-item">
+      <span class="hero__meta-label">Term</span>
+      <span class="hero__meta-value">{{ term.name if term else "Not set" }}</span>
+    </div>
+    <div class="hero__meta-item">
+      <span class="hero__meta-label">Status</span>
+      <span class="hero__meta-value">{% if term %}<span class="badge badge-present">Active</span>{% else %}<span class="badge badge-neutral">Set up needed</span>{% endif %}</span>
+    </div>
+  </div>
+</div>
+
+{% if not term %}
+<div class="card">
+  <div class="empty-state">
+    <div class="empty-state__icon"><i class="fa-solid fa-calendar-plus"></i></div>
+    <h3>No academic term set up yet</h3>
+    <p>Create an academic year and mark a current term to start generating sessions and tracking attendance.</p>
+    <a href="{{ url_for('admin.terms') }}" class="btn btn-primary">Set up terms</a>
+  </div>
+</div>
+{% endif %}
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-card__top">
+      <span class="stat-card__label">Overall Attendance</span>
+      <span class="stat-card__icon"><i class="fa-solid fa-chart-line"></i></span>
+    </div>
+    <div class="stat-card__value">{{ overall_pct if overall_pct is not none else "—" }}{% if overall_pct is not none %}%{% endif %}</div>
+    <div class="stat-card__delta">This term</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__top">
+      <span class="stat-card__label">Sessions Flagged Today</span>
+      <span class="stat-card__icon stat-card__icon--gold"><i class="fa-solid fa-flag"></i></span>
+    </div>
+    <div class="stat-card__value">{{ flagged_today }}</div>
+    <div class="stat-card__delta">Missed roll calls</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__top">
+      <span class="stat-card__label">Registered Students</span>
+      <span class="stat-card__icon"><i class="fa-solid fa-users"></i></span>
+    </div>
+    <div class="stat-card__value">{{ total_students }}</div>
+    <div class="stat-card__delta">Active enrollment</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card__top">
+      <span class="stat-card__label">Students Below 75%</span>
+      <span class="stat-card__icon stat-card__icon--gold"><i class="fa-solid fa-triangle-exclamation"></i></span>
+    </div>
+    <div class="stat-card__value">{{ at_risk_students|length }}</div>
+    <div class="stat-card__delta">Needs attention</div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card__header">
+      <div>
+        <div class="card__title">Attendance Trend</div>
+        <div class="card__subtitle">Daily attendance rate, this term</div>
+      </div>
+    </div>
+    <canvas id="trendChart" height="140"></canvas>
+  </div>
+
+  <div class="card">
+    <div class="card__header">
+      <div>
+        <div class="card__title">Attendance by Class</div>
+        <div class="card__subtitle">Average this term</div>
+      </div>
+    </div>
+    <canvas id="classChart" height="140"></canvas>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card__header">
+      <div class="card__title">Students Needing Attention</div>
+      <a href="{{ url_for('admin.attendance_flags') }}" class="btn btn-outline btn-sm">View all</a>
+    </div>
+    {% if at_risk_students %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Student</th><th>Class</th><th>Attendance</th></tr></thead>
+        <tbody>
+          {% for student, pct in at_risk_students %}
+          <tr onclick="window.location='{{ url_for('admin.student_profile', student_id=student.id) }}'" style="cursor:pointer">
+            <td>{{ student.full_name }}</td>
+            <td class="cell-muted">{{ student.school_class.display_name }}</td>
+            <td><span class="badge badge-absent">{{ pct }}%</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-state__icon"><i class="fa-solid fa-face-smile"></i></div>
+      <h3>No students currently at risk</h3>
+      <p>Every student is above the 75% attendance threshold this term.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card__header">
+      <div class="card__title">Flagged Sessions by Teacher</div>
+    </div>
+    {% if teacher_flag_rows %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Teacher</th><th>Flags</th></tr></thead>
+        <tbody>
+          {% for teacher, count in teacher_flag_rows %}
+          <tr><td>{{ teacher.full_name }}</td><td><span class="badge badge-late">{{ count }}</span></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-state__icon"><i class="fa-solid fa-clipboard-check"></i></div>
+      <h3>No flagged sessions</h3>
+      <p>Once roll call activity begins, missed sessions will surface here by teacher.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+document.getElementById("todayDate").textContent = new Date().toLocaleDateString(undefined, {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'});
+
+function chartTheme() {
+  var dark = document.documentElement.getAttribute("data-theme") === "dark";
+  return { text: dark ? "#9CA3AF" : "#6B7280", grid: dark ? "#1F2937" : "#E5E7EB" };
+}
+
+fetch("{{ url_for('dashboard.attendance_series', level='daily') }}").then(r => r.json()).then(data => {
+  var t = chartTheme();
+  new Chart(document.getElementById("trendChart"), {
+    type: "line",
+    data: { labels: data.labels, datasets: [{ data: data.values, borderColor: "#1D4ED8", backgroundColor: "rgba(29,78,216,0.08)", fill: true, tension: 0.35, pointRadius: 0, borderWidth: 2 }] },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: t.text, font: { size: 10 } }, grid: { display: false } },
+        y: { ticks: { color: t.text, font: { size: 10 } }, grid: { color: t.grid }, min: 0, max: 100 }
+      }
+    }
+  });
+});
+
+fetch("{{ url_for('dashboard.attendance_by_class') }}").then(r => r.json()).then(data => {
+  var t = chartTheme();
+  new Chart(document.getElementById("classChart"), {
+    type: "bar",
+    data: { labels: data.labels, datasets: [{ data: data.values, backgroundColor: "#C9A227", borderRadius: 6, maxBarThickness: 34 }] },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: t.text, font: { size: 10 } }, grid: { display: false } },
+        y: { ticks: { color: t.text, font: { size: 10 } }, grid: { color: t.grid }, min: 0, max: 100 }
+      }
+    }
+  });
+});
+</script>
+{% endblock %}

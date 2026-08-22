@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Users{% endblock %}
+{% block breadcrumb %}<span class="current">Users</span>{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <h1>Users</h1>
+    <p>Staff and teacher accounts. Every account is traceable to who created it and when.</p>
+  </div>
+  <div class="page-header__actions">
+    <a href="{{ url_for('admin.new_user') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> New account</a>
+  </div>
+</div>
+
+<div class="card">
+  {% if users %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr><th>Name</th><th>Role</th><th>Email</th><th>Status</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>{{ u.full_name }} {% if u.is_class_teacher %}<span class="badge badge-gold">Class Teacher</span>{% endif %}</td>
+          <td class="cell-muted">{{ u.role_label }}</td>
+          <td class="cell-muted">{{ u.email }}</td>
+          <td>
+            <div class="badge-stack">
+              {% if u.is_active_account %}<span class="badge badge-present">Active</span>{% else %}<span class="badge badge-neutral">Inactive</span>{% endif %}
+              {% if u.must_reset_password %}<span class="badge badge-late">Pending first login</span>{% endif %}
+            </div>
+          </td>
+          <td>
+            <div class="flex gap-8">
+              {% if u.id != current_user.id %}
+              <form method="POST" action="{{ url_for('admin.toggle_user_active', user_id=u.id) }}">
+                <button type="submit" class="btn btn-outline btn-sm">{{ 'Deactivate' if u.is_active_account else 'Reactivate' }}</button>
+		<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              </form>
+              {% endif %}
+              <form method="POST" action="{{ url_for('admin.reset_user_password', user_id=u.id) }}" onsubmit="return confirm('Reset password for ' + '{{ u.full_name }}' + '? Their old password will stop working immediately.');">
+		<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-outline btn-sm">Reset password</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state__icon"><i class="fa-solid fa-id-badge"></i></div>
+    <h3>No accounts yet</h3>
+    <p>Create teacher and front-office accounts so they can log in and use the system.</p>
+    <a href="{{ url_for('admin.new_user') }}" class="btn btn-primary">Create the first account</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

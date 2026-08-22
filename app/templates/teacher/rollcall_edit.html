@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Edit Roll Call{% endblock %}
+{% block breadcrumb %}<a href="{{ url_for('teacher.dashboard') }}">Dashboard</a> / <span class="current">Edit Roll Call</span>{% endblock %}
+{% block content %}
+
+<div class="rollcall-header">
+  <div class="rollcall-header__title">{{ ts.school_class.display_name }} — {{ ts.subject.name }}</div>
+  <div class="rollcall-header__meta">{{ instance.session_date.strftime('%d %b %Y') }} · Submitted {{ instance.submitted_at.strftime('%H:%M') if instance.submitted_at }}</div>
+</div>
+
+<div class="card" style="background: var(--late-bg); border-color: #f3ddb0;">
+  <p style="color: var(--late); font-size: 13px;"><i class="fa-solid fa-circle-info"></i> Editing a submitted roll call is logged to the audit trail — who changed it, when, and what it was before.</p>
+</div>
+
+<form method="POST">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="card">
+    {% for r in records %}
+    <div class="roster-row">
+      <div class="roster-name-block">
+        <div class="roster-name">{{ r.student.full_name }}</div>
+        <div class="roster-number">{{ r.student.student_number }}</div>
+      </div>
+      <div class="status-toggle">
+        <input type="radio" name="status_{{ r.student_id }}" id="p_{{ r.student_id }}" value="present" {% if r.status == "present" %}checked{% endif %}>
+        <label for="p_{{ r.student_id }}" class="opt-present">Present</label>
+        <input type="radio" name="status_{{ r.student_id }}" id="a_{{ r.student_id }}" value="absent" {% if r.status == "absent" %}checked{% endif %}>
+        <label for="a_{{ r.student_id }}" class="opt-absent">Absent</label>
+        <input type="radio" name="status_{{ r.student_id }}" id="l_{{ r.student_id }}" value="late" {% if r.status == "late" %}checked{% endif %}>
+        <label for="l_{{ r.student_id }}" class="opt-late">Late</label>
+        <input type="radio" name="status_{{ r.student_id }}" id="e_{{ r.student_id }}" value="excused" {% if r.status == "excused" %}checked{% endif %}>
+        <label for="e_{{ r.student_id }}" class="opt-excused">Excused</label>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    <div class="form-group">
+      <label>Reason for change (optional)</label>
+      <textarea name="reason" placeholder="e.g. Corrected after student arrived late"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Save changes</button>
+  </div>
+</form>
+{% endblock %}

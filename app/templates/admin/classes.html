@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Classes{% endblock %}
+{% block breadcrumb %}<span class="current">Classes</span>{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div><h1>Classes</h1><p>Levels and streams that make up your school structure.</p></div>
+  <div class="page-header__actions">
+    <a href="{{ url_for('admin.new_class') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> New class</a>
+  </div>
+</div>
+
+<div class="card">
+  {% if classes %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>Class</th><th>Class Teacher</th><th>Students</th><th></th></tr></thead>
+      <tbody>
+        {% for c in classes %}
+        <tr>
+          <td>{{ c.display_name }}</td>
+          <td class="cell-muted">{{ c.class_teacher.full_name if c.class_teacher else "— None —" }}</td>
+          <td class="cell-muted">{{ c.students|selectattr('is_active')|list|length }}</td>
+          <td><a href="{{ url_for('admin.students', class_id=c.id) }}" class="btn btn-outline btn-sm">View students</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state__icon"><i class="fa-solid fa-school"></i></div>
+    <h3>No classes yet</h3>
+    <p>Add your first class (level and stream) to begin registering students.</p>
+    <a href="{{ url_for('admin.new_class') }}" class="btn btn-primary">Create the first class</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}My Dashboard{% endblock %}
+{% block breadcrumb %}<span class="current">Dashboard</span>{% endblock %}
+{% block content %}
+
+<div class="hero">
+  <div>
+    <h2>Good day, {{ current_user.full_name.split(' ')[0] }}</h2>
+    <p>Here are your classes for today.</p>
+  </div>
+  <div class="hero__meta">
+    <div class="hero__meta-item">
+      <span class="hero__meta-label">Date</span>
+      <span class="hero__meta-value">{{ today.strftime('%d %b %Y') }}</span>
+    </div>
+    <div class="hero__meta-item">
+      <span class="hero__meta-label">Sessions Today</span>
+      <span class="hero__meta-value">{{ sessions_today|length }}</span>
+    </div>
+  </div>
+</div>
+
+{% if missed_count > 0 %}
+<div class="card" style="border-color:#f3ddb0;">
+  <div class="flex gap-12" style="align-items:center;">
+    <span class="stat-card__icon stat-card__icon--gold"><i class="fa-solid fa-triangle-exclamation"></i></span>
+    <div>
+      <strong>You have missed {{ missed_count }} roll call{{ 's' if missed_count != 1 else '' }} this term.</strong>
+      <div class="text-muted" style="font-size:12.5px;">Only you and the Director of Studies can see this.</div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="section-title">Today's Sessions</div>
+
+{% if sessions_today %}
+  {% for instance in sessions_today %}
+  {% set ts = instance.timetable_session %}
+  <div class="lesson-card">
+    <div class="lesson-card__main">
+      <div class="lesson-card__period">
+        <span>P{{ ts.period_number }}</span>
+        <strong>{{ ts.start_time.strftime('%H:%M') }}</strong>
+      </div>
+      <div>
+        <div class="lesson-card__subject">{{ ts.subject.name }}</div>
+        <div class="lesson-card__meta">{{ ts.school_class.display_name }} · {{ ts.start_time.strftime('%H:%M') }}–{{ ts.end_time.strftime('%H:%M') }} · Room {{ ts.room or "—" }}</div>
+      </div>
+    </div>
+    <div class="flex gap-12" style="align-items:center;">
+      {% if instance.status == "rollcall_submitted" %}
+        <span class="badge badge-present">Submitted</span>
+        <a href="{{ url_for('teacher.rollcall_edit', session_instance_id=instance.id) }}" class="btn btn-outline btn-sm">Edit</a>
+      {% elif instance.status == "flagged_missed" %}
+        <span class="badge badge-absent">Flagged Missed</span>
+        <a href="{{ url_for('teacher.rollcall', session_instance_id=instance.id) }}" class="btn btn-primary btn-sm">Take Attendance</a>
+      {% else %}
+        <span class="badge badge-neutral">Not yet submitted</span>
+        <a href="{{ url_for('teacher.rollcall', session_instance_id=instance.id) }}" class="btn btn-primary btn-sm">Take Attendance</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+<div class="card">
+  <div class="empty-state">
+    <div class="empty-state__icon"><i class="fa-solid fa-mug-hot"></i></div>
+    <h3>No sessions scheduled today</h3>
+    <p>Enjoy the free period — nothing needs your attention right now.</p>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

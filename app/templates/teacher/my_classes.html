@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}My Classes{% endblock %}
+{% block breadcrumb %}<span class="current">My Classes</span>{% endblock %}
+{% block content %}
+
+<div class="page-header"><div><h1>My Classes</h1><p>Attendance stats for the classes and subjects you teach.</p></div></div>
+
+<div class="card">
+  {% if stats %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>Class</th><th>Subject</th><th>Sessions Recorded</th><th>Attendance</th></tr></thead>
+      <tbody>
+        {% for school_class, subject, pct, total in stats %}
+        <tr>
+          <td>{{ school_class.display_name }}</td>
+          <td>{{ subject.name }}</td>
+          <td class="cell-muted">{{ total }}</td>
+          <td>
+            {% if pct is not none %}
+              <span class="badge {% if pct >= 90 %}badge-present{% elif pct >= 75 %}badge-late{% else %}badge-absent{% endif %}">{{ pct }}%</span>
+            {% else %}
+              <span class="badge badge-neutral">No data</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state__icon"><i class="fa-solid fa-chalkboard"></i></div>
+    <h3>No classes assigned yet</h3>
+    <p>Once you're assigned to a class and subject on the timetable, your stats will appear here.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

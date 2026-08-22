@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Audit Log{% endblock %}
+{% block breadcrumb %}<span class="current">Audit Log</span>{% endblock %}
+{% block content %}
+
+<div class="page-header"><div><h1>Audit Log</h1><p>Every edit to an already-submitted roll call, in order — nothing is silently overwritten.</p></div></div>
+
+<div class="card">
+  {% if entries %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>When</th><th>Student</th><th>Change</th><th>Changed by</th><th>Reason</th></tr></thead>
+      <tbody>
+        {% for e in entries %}
+        <tr>
+          <td class="cell-muted">{{ e.changed_at.strftime('%d %b %Y, %H:%M') }}</td>
+          <td>{{ e.attendance_record.student.full_name }}</td>
+          <td>
+            <span class="badge badge-{{ e.old_status }}">{{ e.old_status|capitalize }}</span>
+            <i class="fa-solid fa-arrow-right" style="margin: 0 4px; color: var(--text-secondary); font-size: 10px;"></i>
+            <span class="badge badge-{{ e.new_status }}">{{ e.new_status|capitalize }}</span>
+          </td>
+          <td class="cell-muted">{{ e.changer.full_name }}</td>
+          <td class="cell-muted">{{ e.reason or "—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state__icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+    <h3>No edits recorded yet</h3>
+    <p>Once a submitted roll call is changed, the edit history will appear here.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

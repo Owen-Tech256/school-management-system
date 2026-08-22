@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Roll Call{% endblock %}
+{% block breadcrumb %}<a href="{{ url_for('teacher.dashboard') }}">Dashboard</a> / <span class="current">Roll Call</span>{% endblock %}
+{% block content %}
+
+<div class="rollcall-header">
+  <div class="rollcall-header__title">{{ ts.school_class.display_name }} — {{ ts.subject.name }}</div>
+  <div class="rollcall-header__meta">{{ ts.start_time.strftime('%H:%M') }}–{{ ts.end_time.strftime('%H:%M') }} · Room {{ ts.room or "—" }} · {{ instance.session_date.strftime('%d %b %Y') }}</div>
+  <div class="rollcall-header__stats">
+    <div class="rollcall-stat"><span class="rollcall-stat__value">{{ roster|length }}</span><span class="rollcall-stat__label">Students</span></div>
+    <div class="rollcall-stat"><span class="rollcall-stat__value" id="countPresent">{{ roster|length }}</span><span class="rollcall-stat__label">Present</span></div>
+    <div class="rollcall-stat"><span class="rollcall-stat__value" id="countAbsent">0</span><span class="rollcall-stat__label">Absent</span></div>
+    <div class="rollcall-stat"><span class="rollcall-stat__value" id="countLate">0</span><span class="rollcall-stat__label">Late</span></div>
+  </div>
+</div>
+
+{% if roster %}
+<form method="POST" id="rollcallForm">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <div class="card">
+    <input type="search" id="rosterSearch" class="roster-search" placeholder="Search student by name...">
+
+    {% for student in roster %}
+    {% set existing = existing_records.get(student.id) %}
+    {% set current_status = existing.status if existing else "present" %}
+    <div class="roster-row" data-name="{{ student.full_name|lower }}">
+      {% if student.photo_storage_path %}
+        <img class="roster-photo" src="{{ url_for('static', filename=student.photo_storage_path) }}" alt="">
+      {% else %}
+        <div class="roster-photo-placeholder">{{ student.full_name[:1] }}</div>
+      {% endif %}
+      <div class="roster-name-block">
+        <div class="roster-name">{{ student.full_name }}</div>
+        <div class="roster-number">{{ student.student_number }}</div>
+      </div>
+      <div class="status-toggle" data-student="{{ student.id }}">
+        <input type="radio" name="status_{{ student.id }}" id="p_{{ student.id }}" value="present" {% if current_status == "present" %}checked{% endif %}>
+        <label for="p_{{ student.id }}" class="opt-present">Present</label>
+        <input type="radio" name="status_{{ student.id }}" id="a_{{ student.id }}" value="absent" {% if current_status == "absent" %}checked{% endif %}>
+        <label for="a_{{ student.id }}" class="opt-absent">Absent</label>
+        <input type="radio" name="status_{{ student.id }}" id="l_{{ student.id }}" value="late" {% if current_status == "late" %}checked{% endif %}>
+        <label for="l_{{ student.id }}" class="opt-late">Late</label>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="sticky-submit-bar">
+    <button type="submit" class="btn btn-gold" style="padding: 13px 26px; font-size: 14.5px;">
+      Submit Attendance <i class="fa-solid fa-arrow-right"></i>
+    </button>
+  </div>
+</form>
+{% else %}
+<div class="card">
+  <div class="empty-state">
+    <div class="empty-state__icon"><i class="fa-solid fa-user-slash"></i></div>
+    <h3>No students enrolled</h3>
+    <p>No students are enrolled in {{ ts.subject.name }} for {{ ts.school_class.display_name }} this term yet.</p>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function updateCounts() {
+  var present = 0, absent = 0, late = 0;
+  document.querySelectorAll('.status-toggle').forEach(function (group) {
+    var checked = group.querySelector('input:checked');
+    if (!checked) return;
+    if (checked.value === 'present') present++;
+    else if (checked.value === 'absent') absent++;
+    else if (checked.value === 'late') late++;
+  });
+  document.getElementById('countPresent').textContent = present;
+  document.getElementById('countAbsent').textContent = absent;
+  document.getElementById('countLate').textContent = late;
+}
+document.querySelectorAll('.status-toggle input').forEach(function (input) {
+  input.addEventListener('change', updateCounts);
+});
+updateCounts();
+
+var form = document.getElementById('rollcallForm');
+if (form) {
+  form.addEventListener('submit', function (e) {
+    if (!confirm('Submit attendance for ' + document.querySelectorAll('.status-toggle').length + ' students?')) {
+      e.preventDefault();
+    }
+  });
+}
+</script>
+{% endblock %}

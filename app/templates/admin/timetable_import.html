@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Bulk import timetable{% endblock %}
+{% block breadcrumb %}<a href="{{ url_for('admin.timetable') }}">Timetable</a> / <span class="current">Bulk Import</span>{% endblock %}
+{% block content %}
+
+<div class="page-header"><div><h1>Bulk Import Timetable</h1><p>Upload a CSV using the template's column format — nothing is written until every row validates.</p></div></div>
+
+<div class="card" style="max-width:600px;">
+  <div class="form-group">
+    <a href="{{ url_for('admin.timetable_import_template') }}" class="btn btn-outline btn-sm"><i class="fa-solid fa-download"></i> Download CSV template</a>
+  </div>
+    <form method="POST" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-group">
+      <label>Timetable CSV file</label>
+      <input type="file" name="file" accept=".csv" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Preview &amp; import</button>
+  </form>
+</div>
+
+{% if errors %}
+<div class="card">
+  <div class="card__header"><div class="card__title">Rows that failed validation</div></div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <tbody>
+        {% for e in errors %}
+        <tr><td style="color: var(--absent);">{{ e }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="form-hint" style="margin-top:12px;">Fix these rows in your spreadsheet and re-upload — either the whole import succeeds, or none of it does.</p>
+</div>
+{% endif %}
+{% endblock %}

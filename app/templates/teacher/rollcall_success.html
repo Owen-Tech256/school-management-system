@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Attendance Submitted{% endblock %}
+{% block breadcrumb %}<span class="current">Roll Call</span>{% endblock %}
+{% block content %}
+
+<div class="card">
+  <div class="success-panel">
+    <div class="success-panel__check"><i class="fa-solid fa-check"></i></div>
+    <h2>Attendance Submitted</h2>
+    <p>{{ instance.timetable_session.school_class.display_name }} · {{ instance.timetable_session.subject.name }}</p>
+    <p>{{ count }} student{{ 's' if count != 1 else '' }} recorded</p>
+    <div style="margin-top:24px;">
+      <a href="{{ url_for('teacher.dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

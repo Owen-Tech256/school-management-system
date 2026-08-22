@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block breadcrumb %}<a href="{{ url_for('admin.subjects') }}">Subjects</a> / <span class="current">{{ title }}</span>{% endblock %}
+{% block content %}
+
+<div class="page-header"><div><h1>{{ title }}</h1></div></div>
+
+<div class="card" style="max-width:520px;">
+  <form method="POST" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="form-group">
+      <label>Subject name</label>
+      {{ form.name(placeholder="e.g. Mathematics") }}
+      {% for e in form.name.errors %}<span class="field-errors">{{ e }}</span>{% endfor %}
+    </div>
+    <div class="form-group">
+      <label>Expected periods / week</label>
+      {{ form.expected_periods_per_week() }}
+    </div>
+    <div class="form-group">
+      <div class="checkbox-row">
+        {{ form.is_elective() }}
+        <label>Elective subject (S3–S6)</label>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Create subject</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Subjects{% endblock %}
+{% block breadcrumb %}<span class="current">Subjects</span>{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div><h1>Subjects</h1><p>Non-elective subjects auto-enroll every S1/S2 student in their class.</p></div>
+  <div class="page-header__actions">
+    <a href="{{ url_for('admin.new_subject') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> New subject</a>
+  </div>
+</div>
+
+<div class="card">
+  {% if subjects %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>Subject</th><th>Type</th><th>Expected periods / week</th><th></th></tr></thead>
+      <tbody>
+	{% for s in subjects %}
+        <tr>
+          <td>{{ s.name }}</td>
+          <td>{% if s.is_elective %}<span class="badge badge-gold">Elective</span>{% else %}<span class="badge badge-neutral">Compulsory</span>{% endif %}</td>
+          <td class="cell-muted">{{ s.expected_periods_per_week }}</td>
+          <td><a href="{{ url_for('admin.edit_subject', subject_id=s.id) }}" class="btn btn-outline btn-sm">Edit</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state__icon"><i class="fa-solid fa-book"></i></div>
+    <h3>No subjects yet</h3>
+    <p>Add subjects before building the timetable or registering students.</p>
+    <a href="{{ url_for('admin.new_subject') }}" class="btn btn-primary">Create the first subject</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

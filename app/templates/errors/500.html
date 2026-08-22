@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Something went wrong{% endblock %}
+{% block content %}
+<div class="error-state">
+  <div class="error-state__icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+  <h3>Something went wrong</h3>
+  <p>We couldn't complete that request. Please try again, and contact your administrator if it keeps happening.</p>
+  <a href="{{ url_for('index') }}" class="btn btn-primary">Back to dashboard</a>
+</div>
+{% endblock %}

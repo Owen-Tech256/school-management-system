@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block breadcrumb %}<span class="current">Reports</span>{% endblock %}
+{% block content %}
+
+<div class="page-header"><div><h1>Reports</h1><p>Generate a term or class attendance report for printed parent meetings or record-keeping.</p></div></div>
+
+<div class="card" style="max-width:560px;">
+  <div class="card__header"><div class="card__title">Report Configuration</div></div>
+  <form method="GET" action="{{ url_for('admin.reports') }}">
+    <div class="form-group">
+      <label>Class</label>
+      <select name="class_id">
+        <option value="">All classes</option>
+        {% for c in classes %}
+        <option value="{{ c.id }}" {% if class_id == c.id %}selected{% endif %}>{{ c.display_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Date range start</label>
+        <input type="date" name="start_date" value="{{ start_date or '' }}" required>
+      </div>
+      <div class="form-group">
+        <label>Date range end</label>
+        <input type="date" name="end_date" value="{{ end_date or '' }}" required>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Preview Report</button>
+    {% if preview_rows %}
+    <a class="btn btn-outline" href="{{ url_for('admin.reports_export_csv', class_id=class_id, start_date=start_date, end_date=end_date) }}">
+      <i class="fa-solid fa-download"></i> Download CSV
+    </a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="card">
+  <div class="card__header"><div class="card__title">Report Preview</div></div>
+  {% if preview_rows %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>Date</th><th>Class</th><th>Subject</th><th>Student</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for r in preview_rows %}
+        <tr>
+          <td>{{ r.session_instance.session_date.strftime('%d %b %Y') }}</td>
+          <td>{{ r.session_instance.timetable_session.school_class.display_name }}</td>
+          <td>{{ r.session_instance.timetable_session.subject.name }}</td>
+          <td>{{ r.student.full_name }}</td>
+          <td><span class="badge badge-{{ r.status }}">{{ r.status|capitalize }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state__icon"><i class="fa-solid fa-file-chart-column"></i></div>
+    <h3>No report generated yet</h3>
+    <p>Choose a date range above and click Preview Report.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

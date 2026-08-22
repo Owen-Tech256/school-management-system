@@ -1,0 +1,28 @@
+<header class="topbar">
+  <div class="topbar__left">
+    <button class="icon-btn sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+    <nav class="breadcrumb">
+      {% block breadcrumb %}
+        <span>{{ school_name }}</span>
+      {% endblock %}
+    </nav>
+  </div>
+
+  <div class="topbar__right">
+    <button class="icon-btn" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+      <i class="fa-solid fa-moon"></i>
+    </button>
+    <button class="icon-btn" aria-label="Notifications" title="Notifications">
+      <i class="fa-regular fa-bell"></i>
+    </button>
+    <div class="topbar__user">
+      <div class="profile-avatar profile-avatar--sm">{{ current_user.full_name[:1] }}</div>
+      <div class="topbar__user-meta">
+        <span class="topbar__user-name">{{ current_user.full_name }}</span>
+        <span class="topbar__user-role">{{ current_user.role_label }}</span>
+      </div>
+    </div>
+  </div>
+</header>

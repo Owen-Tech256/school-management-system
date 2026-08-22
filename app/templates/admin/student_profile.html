@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}{{ student.full_name }}{% endblock %}
+{% block breadcrumb %}
+  {% if read_only %}<a href="{{ url_for('lookup.classes') }}">Attendance Lookup</a>{% else %}<a href="{{ url_for('admin.students') }}">Students</a>{% endif %}
+  / <span class="current">{{ student.full_name }}</span>
+{% endblock %}
+{% block content %}
+
+<div class="card">
+  <div class="profile-header">
+    {% if student.photo_storage_path %}
+      <img class="profile-photo" src="{{ url_for('static', filename=student.photo_storage_path) }}" alt="">
+    {% else %}
+      <div class="profile-photo-placeholder">{{ student.full_name[:1] }}</div>
+    {% endif %}
+    <div>
+      <div class="profile-name">{{ student.full_name }}</div>
+      <div class="profile-id">{{ student.student_number }} · {{ student.school_class.display_name }}</div>
+      <div class="profile-tags">
+        {% if overall_pct is not none %}
+          <span class="badge {% if overall_pct >= 90 %}badge-present{% elif overall_pct >= 75 %}badge-late{% else %}badge-absent{% endif %}">{{ overall_pct }}% attendance</span>
+        {% endif %}
+        {% if overall_pct is not none and overall_pct >= 90 %}
+          <span class="badge badge-gold">Good Standing</span>
+        {% endif %}
+        {% if student.guardian_name %}<span class="badge badge-neutral">Guardian: {{ student.guardian_name }}</span>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card__header"><div class="card__title">Subject Breakdown</div></div>
+    {% if subject_breakdown %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Subject</th><th>Attendance</th></tr></thead>
+        <tbody>
+          {% for name, s in subject_breakdown.items() %}
+          {% set pct = (s.present / s.total * 100) | round(1) if s.total else 0 %}
+          <tr>
+            <td>{{ name }}</td>
+            <td><span class="badge {% if pct >= 90 %}badge-present{% elif pct >= 75 %}badge-late{% else %}badge-absent{% endif %}">{{ pct }}%</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-state__icon"><i class="fa-solid fa-chart-simple"></i></div>
+      <h3>No attendance records</h3>
+      <p>There are no attendance records for this student yet.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card__header"><div class="card__title">Recent Absences</div></div>
+    {% if recent_absences %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th>Date</th><th>Subject</th><th>Teacher</th></tr></thead>
+        <tbody>
+          {% for r in recent_absences %}
+          <tr>
+            <td>{{ r.session_instance.session_date.strftime('%d %b %Y') }}</td>
+            <td>{{ r.session_instance.timetable_session.subject.name }}</td>
+            <td class="cell-muted">{{ r.session_instance.timetable_session.teacher.full_name }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-state__icon"><i class="fa-solid fa-face-smile"></i></div>
+      <h3>No recent absences</h3>
+      <p>This student's attendance record is clean so far.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card__header"><div class="card__title">Attendance Timeline</div></div>
+  {% if records %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>Date</th><th>Subject</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for r in records %}
+        <tr>
+          <td>{{ r.session_instance.session_date.strftime('%d %b %Y') }}</td>
+          <td>{{ r.session_instance.timetable_session.subject.name }}</td>
+          <td><span class="badge badge-{{ r.status }}">{{ r.status|capitalize }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state__icon"><i class="fa-solid fa-calendar"></i></div>
+    <h3>No sessions recorded yet</h3>
+    <p>Once the timetable and roll calls begin, this student's timeline will populate here.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

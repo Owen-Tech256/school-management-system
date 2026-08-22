@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Edit timetable slot{% endblock %}
+{% block breadcrumb %}<a href="{{ url_for('admin.timetable', class_id=school_class.id) }}">Timetable</a> / <span class="current">{{ day }} · Period {{ period }}</span>{% endblock %}
+{% block content %}
+
+<div class="page-header"><div><h1>{{ school_class.display_name }}</h1><p>{{ day }} · Period {{ period }}</p></div></div>
+
+<div class="card" style="max-width:520px;">
+  <form method="POST" action="{{ url_for('admin.timetable_cell', class_id=school_class.id, day=day, period=period) }}" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="form-group">
+      <label>Subject</label>
+      {{ form.subject_id() }}
+    </div>
+    <div class="form-group">
+      <label>Teacher</label>
+      {{ form.teacher_id() }}
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Start time</label>
+        {{ form.start_time() }}
+      </div>
+      <div class="form-group">
+        <label>End time</label>
+        {{ form.end_time() }}
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Room</label>
+      {{ form.room(placeholder="e.g. Room 12") }}
+    </div>
+    <button type="submit" class="btn btn-primary">Save slot</button>
+  </form>
+</div>
+{% endblock %}

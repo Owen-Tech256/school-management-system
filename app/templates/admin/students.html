@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Students{% endblock %}
+{% block breadcrumb %}<span class="current">Students</span>{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div><h1>Students</h1><p>Every student registered with a photo and unique ID.</p></div>
+  <div class="page-header__actions">
+    <a href="{{ url_for('admin.new_student') }}" class="btn btn-primary"><i class="fa-solid fa-user-plus"></i> Register student</a>
+  </div>
+</div>
+
+<div class="card">
+  <form method="GET" class="flex gap-12" style="margin-bottom:18px; flex-wrap:wrap;">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search by name or student number" style="max-width:280px;">
+    <select name="class_id" style="max-width:200px;" onchange="this.form.submit()">
+      <option value="">All classes</option>
+      {% for c in classes %}
+      <option value="{{ c.id }}" {% if class_id == c.id %}selected{% endif %}>{{ c.display_name }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-outline btn-sm">Search</button>
+  </form>
+
+  {% if students %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th></th><th>Student</th><th>Class</th><th>Guardian</th><th>Attendance</th></tr></thead>
+      <tbody>
+        {% for s in students %}
+        <tr onclick="window.location='{{ url_for('admin.student_profile', student_id=s.id) }}'" style="cursor:pointer">
+          <td>
+            {% if s.photo_storage_path %}
+              <img class="table-photo" src="{{ url_for('static', filename=s.photo_storage_path) }}" alt="">
+            {% else %}
+              <div class="table-photo-placeholder">{{ s.full_name[:1] }}</div>
+            {% endif %}
+          </td>
+          <td>{{ s.full_name }}<div class="cell-muted" style="font-size:11.5px;">{{ s.student_number }}</div></td>
+          <td class="cell-muted">{{ s.school_class.display_name }}</td>
+          <td class="cell-muted">{{ s.guardian_name or "—" }}</td>
+          <td>
+            {% set pct = s.attendance_percentage() %}
+            {% if pct is not none %}
+              <span class="badge {% if pct >= 90 %}badge-present{% elif pct >= 75 %}badge-late{% else %}badge-absent{% endif %}">{{ pct }}%</span>
+            {% else %}
+              <span class="badge badge-neutral">No data</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state__icon"><i class="fa-solid fa-users"></i></div>
+    <h3>No students found</h3>
+    <p>{% if q or class_id %}Try a different search or clear the filters.{% else %}Register your first student to get started.{% endif %}</p>
+    {% if not q and not class_id %}<a href="{{ url_for('admin.new_student') }}" class="btn btn-primary">Register a student</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
