@@ -16,12 +16,17 @@
     <table class="data-table">
       <thead><tr><th>Class</th><th>Class Teacher</th><th>Students</th><th></th></tr></thead>
       <tbody>
-        {% for c in classes %}
+                {% for c in classes %}
         <tr>
           <td>{{ c.display_name }}</td>
           <td class="cell-muted">{{ c.class_teacher.full_name if c.class_teacher else "— None —" }}</td>
           <td class="cell-muted">{{ c.students|selectattr('is_active')|list|length }}</td>
-          <td><a href="{{ url_for('admin.students', class_id=c.id) }}" class="btn btn-outline btn-sm">View students</a></td>
+          <td>
+            <div class="flex gap-8">
+              <a href="{{ url_for('admin.students', class_id=c.id) }}" class="btn btn-outline btn-sm">View students</a>
+              <a href="{{ url_for('admin.edit_class', class_id=c.id) }}" class="btn btn-outline btn-sm">Edit</a>
+            </div>
+          </td>
         </tr>
         {% endfor %}
       </tbody>

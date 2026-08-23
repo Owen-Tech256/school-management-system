@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block breadcrumb %}<a href="{{ url_for('admin.terms') }}">Terms &amp; Years</a> / <span class="current">{{ title }}</span>{% endblock %}
+{% block content %}
+
+<div class="page-header"><div><h1>{{ title }}</h1></div></div>
+
+<div class="card" style="max-width:480px;">
+  <form method="POST" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="form-group">
+      <label>Academic year</label>
+      {{ form.academic_year_id() }}
+    </div>
+    <div class="form-group">
+      <label>Term name</label>
+      {{ form.name(placeholder="e.g. Term 1") }}
+      {% for e in form.name.errors %}<span class="field-errors">{{ e }}</span>{% endfor %}
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Start date</label>
+        {{ form.start_date() }}
+      </div>
+      <div class="form-group">
+        <label>End date</label>
+        {{ form.end_date() }}
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="checkbox-row">
+        {{ form.is_current() }}
+        <label>Set as current term</label>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Save term</button>
+  </form>
+</div>
+{% endblock %}

@@ -162,7 +162,50 @@ def set_current_term(term_id):
     flash(f"{term.name} is now the current term.", "success")
     return redirect(url_for("admin.terms"))
 
+@admin_bp.route("/terms/<int:term_id>/edit", methods=["GET", "POST"])
+@_staff_only
+def edit_term(term_id):
+    term = Term.query.get_or_404(term_id)
+    form = TermForm(obj=term)
+    form.academic_year_id.choices = [
+        (y.id, y.label) for y in AcademicYear.query.filter_by(school_id=current_user.school_id).all()
+    ]
+    if request.method == "GET":
+        form.is_current.data = term.is_current
 
+    if form.validate_on_submit():
+        if form.is_current.data and not term.is_current:
+            Term.query.update({Term.is_current: False})
+        term.academic_year_id = form.academic_year_id.data
+        term.name = form.name.data
+        term.start_date = form.start_date.data
+        term.end_date = form.end_date.data
+        term.is_current = form.is_current.data
+        db.session.commit()
+        flash("Term updated.", "success")
+        return redirect(url_for("admin.terms"))
+    return render_template("admin/term_form.html", form=form, title="Edit term")
+
+
+@admin_bp.route("/terms/<int:term_id>/delete", methods=["POST"])
+@_staff_only
+def delete_term(term_id):
+    term = Term.query.get_or_404(term_id)
+    timetable_count = TimetableSession.query.filter_by(term_id=term.id).count()
+    enrollment_count = StudentSubjectEnrollment.query.filter_by(term_id=term.id).count()
+
+    if timetable_count > 0 or enrollment_count > 0:
+        flash(
+            f"Can't delete {term.name} — it has {timetable_count} timetable slot(s) and "
+            f"{enrollment_count} enrollment record(s) attached. Remove those first.",
+            "error",
+        )
+        return redirect(url_for("admin.terms"))
+
+    db.session.delete(term)
+    db.session.commit()
+    flash(f"{term.name} deleted.", "success")
+    return redirect(url_for("admin.terms"))
 # ---------------------------------------------------------------------------
 # Users
 # ---------------------------------------------------------------------------
@@ -268,6 +311,31 @@ def new_class():
         flash("Class created.", "success")
         return redirect(url_for("admin.classes"))
     return render_template("admin/class_form.html", form=form, title="New class")
+
+@admin_bp.route("/classes/<int:class_id>/edit", methods=["GET", "POST"])
+@_staff_only
+def edit_class(class_id):
+    cls = SchoolClass.query.get_or_404(class_id)
+    form = ClassForm(obj=cls)
+    form.academic_year_id.choices = [
+        (y.id, y.label) for y in AcademicYear.query.filter_by(school_id=current_user.school_id).all()
+    ]
+    form.class_teacher_id.choices = [(0, "— None —")] + [
+        (t.id, t.full_name) for t in User.query.filter_by(school_id=current_user.school_id, role=User.ROLE_TEACHER).all()
+    ]
+    if request.method == "GET":
+        form.class_teacher_id.data = cls.class_teacher_id or 0
+
+    if form.validate_on_submit():
+        cls.level = form.level.data.strip()
+        cls.stream = form.stream.data.strip() or None
+        cls.academic_year_id = form.academic_year_id.data
+        cls.class_teacher_id = form.class_teacher_id.data or None
+        db.session.commit()
+        flash("Class updated.", "success")
+        return redirect(url_for("admin.classes"))
+    return render_template("admin/class_form.html", form=form, title="Edit class")
+
 
 @admin_bp.route("/subjects/<int:subject_id>/edit", methods=["GET", "POST"])
 @_staff_only
