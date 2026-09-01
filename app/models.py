@@ -34,6 +34,10 @@ class AcademicYear(db.Model):
 
     terms = db.relationship("Term", backref="academic_year", lazy=True, cascade="all, delete-orphan")
 
+    __table_args__ = (
+        db.UniqueConstraint("school_id", "label", name="uq_academic_year_school_label"),
+    )
+
 
 class Term(db.Model):
     __tablename__ = "terms"
@@ -301,3 +305,21 @@ class ParentAccess(db.Model):
     phone = db.Column(db.String(30))
     issued_at = db.Column(db.DateTime, default=datetime.utcnow)
     used_at = db.Column(db.DateTime, nullable=True)
+
+class RollCallDraft(db.Model):
+    """Server-side persistence for an in-progress roll call.
+
+    Auto-saved from the rollcall page via fetch() so a teacher's selections
+    survive a refresh, a browser crash, or switching devices — not just
+    the per-browser localStorage copy.
+    """
+    __tablename__ = "rollcall_drafts"
+
+    id = db.Column(db.Integer, primary_key=True)
+    session_instance_id = db.Column(db.Integer, db.ForeignKey("session_instances.id"), nullable=False, unique=True)
+    teacher_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    payload = db.Column(db.Text, nullable=False, default="{}")  # JSON: {"<student_id>": "present|absent|late"}
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    session_instance = db.relationship("SessionInstance")
+    teacher = db.relationship("User")

@@ -50,6 +50,9 @@
     <button type="submit" class="btn btn-gold" style="padding: 13px 26px; font-size: 14.5px;">
       Submit Attendance <i class="fa-solid fa-arrow-right"></i>
     </button>
+    <button type="button" id="saveDraftBtn" class="btn btn-secondary" style="padding: 13px 26px; font-size: 14.5px;">
+      <i class="fa-solid fa-floppy-disk"></i> Save draft
+    </button>
   </div>
 </form>
 {% else %}
@@ -85,12 +88,131 @@ document.querySelectorAll('.status-toggle input').forEach(function (input) {
 updateCounts();
 
 var form = document.getElementById('rollcallForm');
+var DRAFT_KEY = 'rollcall_draft_{{ instance.id }}';
+
+function collectDraft() {
+  var draft = {};
+  document.querySelectorAll('.status-toggle').forEach(function (group) {
+    var checked = group.querySelector('input:checked');
+    if (checked) draft[group.getAttribute('data-student')] = checked.value;
+  });
+  return draft;
+}
+
+function saveDraftLocal(draftObj) {
+  try {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draftObj || collectDraft()));
+    return true;
+  } catch (err) { return false; }
+}
+
+// Push the current selections to the server so they survive a browser crash
+// or a device switch. Debounced so rapid tapping doesn't flood the backend.
+var saveTimer = null;
+function saveDraftServer(draftObj) {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(function () {
+    fetch(DRAFT_URL, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+      body: JSON.stringify(draftObj || collectDraft())
+    }).catch(function () {
+      // Server save failed — the localStorage copy is still intact, so the
+      // work is not lost. A later change will retry the server save.
+    });
+  }, 800);
+}
+
+function saveDraft() {
+  var draftObj = collectDraft();
+  var okLocal = saveDraftLocal(draftObj);
+  saveDraftServer(draftObj);
+  return okLocal;
+}
+
+function restoreDraft() {
+  var raw = null;
+  try { raw = localStorage.getItem(DRAFT_KEY); } catch (err) { return; }
+  if (!raw) return;
+  var draft;
+  try { draft = JSON.parse(raw); } catch (err) { return; }
+  Object.keys(draft).forEach(function (studentId) {
+    var input = document.querySelector(
+      '.status-toggle input[name="status_' + studentId + '"][value="' + draft[studentId] + '"]'
+    );
+    if (input) input.checked = true;
+  });
+  updateCounts();
+}
+
+// Restore any previously saved selections so a failed submission or a
+// refresh never wipes out the teacher's work. The server draft is fetched
+// first (it survives device switches and cleared browsers); localStorage is
+// checked afterwards as the instant, already-cached copy. A draft only wins
+// over the pre-filled submitted records if it is more than an empty object.
+var DRAFT_URL = '{{ url_for("teacher.rollcall_draft", session_instance_id=instance.id) }}';
+fetch(DRAFT_URL, { credentials: 'same-origin' })
+  .then(function (res) { return res.ok ? res.json() : { payload: {} }; })
+  .then(function (data) {
+    var serverDraft = data && data.payload ? data.payload : {};
+    var localRaw = null;
+    try { localRaw = localStorage.getItem(DRAFT_KEY); } catch (err) {}
+    var localDraft = {};
+    if (localRaw) { try { localDraft = JSON.parse(localRaw); } catch (err) {} }
+    // Merge: server values take precedence unless local has a key the server lacks.
+    var merged = {};
+    Object.keys(localDraft).forEach(function (k) { merged[k] = localDraft[k]; });
+    Object.keys(serverDraft).forEach(function (k) { merged[k] = serverDraft[k]; });
+    if (Object.keys(merged).length) {
+      Object.keys(merged).forEach(function (studentId) {
+        var input = document.querySelector(
+          '.status-toggle input[name="status_' + studentId + '"][value="' + merged[studentId] + '"]'
+        );
+        if (input) input.checked = true;
+      });
+      updateCounts();
+      saveDraftLocal(merged);
+      saveDraftServer(merged);
+    }
+  })
+  .catch(function () { /* offline or server error — localStorage restore already applied */ });
+
+document.querySelectorAll('.status-toggle input').forEach(function (input) {
+  input.addEventListener('change', saveDraft);
+});
+
+var saveDraftBtn = document.getElementById('saveDraftBtn');
+if (saveDraftBtn) {
+  saveDraftBtn.addEventListener('click', function () {
+    if (saveDraft()) {
+      saveDraftBtn.innerHTML = '<i class="fa-solid fa-check"></i> Draft saved';
+      setTimeout(function () {
+        saveDraftBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save draft';
+      }, 2000);
+    } else {
+      alert('Could not save the draft in this browser. Your selections are still on the page — do not close it.');
+    }
+  });
+}
+
 if (form) {
   form.addEventListener('submit', function (e) {
     if (!confirm('Submit attendance for ' + document.querySelectorAll('.status-toggle').length + ' students?')) {
       e.preventDefault();
+      return;
     }
+    // Keep a local copy until the server confirms, so if submission fails
+    // the selections can be restored on retry or refresh.
+    saveDraft();
   });
+  form.addEventListener('fetch-failed-retry', restoreDraft);
+}
+
+// Clear the draft once the server has actually accepted the submission.
+// (The server-side RollCallDraft row is deleted in the submit route itself.)
+if (window.location.pathname.indexOf('/rollcall/success') !== -1) {
+  try { localStorage.removeItem(DRAFT_KEY); } catch (err) {}
 }
 </script>
 {% endblock %}

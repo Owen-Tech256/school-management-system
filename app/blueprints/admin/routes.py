@@ -104,24 +104,57 @@ def dashboard():
 # Academic Years / Terms
 # ---------------------------------------------------------------------------
 
+def _year_label_taken(label, exclude_id=None):
+    """True if another academic year in this school already uses the label."""
+    query = AcademicYear.query.filter(
+        AcademicYear.school_id == current_user.school_id,
+        db.func.lower(AcademicYear.label) == label.strip().lower(),
+    )
+    if exclude_id is not None:
+        query = query.filter(AcademicYear.id != exclude_id)
+    return query.first() is not None
+
+
 @admin_bp.route("/academic-years", methods=["GET", "POST"])
 @_staff_only
 def academic_years():
     form = AcademicYearForm()
     if form.validate_on_submit():
-        year = AcademicYear(
-            school_id=current_user.school_id,
-            label=form.label.data,
-            start_date=form.start_date.data,
-            end_date=form.end_date.data,
-        )
-        db.session.add(year)
-        db.session.commit()
-        flash("Academic year created.", "success")
-        return redirect(url_for("admin.academic_years"))
+        if _year_label_taken(form.label.data):
+            form.label.errors.append("An academic year with this label already exists.")
+        else:
+            year = AcademicYear(
+                school_id=current_user.school_id,
+                label=form.label.data.strip(),
+                start_date=form.start_date.data,
+                end_date=form.end_date.data,
+            )
+            db.session.add(year)
+            db.session.commit()
+            flash("Academic year created.", "success")
+            return redirect(url_for("admin.academic_years"))
 
     years = AcademicYear.query.filter_by(school_id=current_user.school_id).order_by(AcademicYear.label.desc()).all()
     return render_template("admin/academic_years.html", form=form, years=years)
+
+
+@admin_bp.route("/academic-years/<int:year_id>/edit", methods=["GET", "POST"])
+@_staff_only
+def academic_year_edit(year_id):
+    year = AcademicYear.query.filter_by(school_id=current_user.school_id).filter_by(id=year_id).first_or_404()
+    form = AcademicYearForm(obj=year)
+    if form.validate_on_submit():
+        if _year_label_taken(form.label.data, exclude_id=year.id):
+            form.label.errors.append("An academic year with this label already exists.")
+        else:
+            year.label = form.label.data.strip()
+            year.start_date = form.start_date.data
+            year.end_date = form.end_date.data
+            db.session.commit()
+            flash("Academic year updated.", "success")
+            return redirect(url_for("admin.academic_years"))
+
+    return render_template("admin/academic_year_edit.html", form=form, year=year)
 
 
 @admin_bp.route("/terms", methods=["GET", "POST"])
