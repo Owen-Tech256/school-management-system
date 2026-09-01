@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Edit Academic Year{% endblock %}
+{% block breadcrumb %}<a href="{{ url_for('admin.academic_years') }}">Academic Years</a> / <span class="current">Edit {{ year.label }}</span>{% endblock %}
+{% block content %}
+
+<div class="page-header"><div><h1>Edit academic year</h1><p>Update the label or date range for {{ year.label }}.</p></div></div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card__header"><div class="card__title">Edit year</div></div>
+    <form method="POST" novalidate>
+      {{ form.hidden_tag() }}
+      <div class="form-group">
+        <label>Year label</label>
+        {{ form.label(placeholder="e.g. 2026") }}
+        {% for e in form.label.errors %}<span class="field-errors">{{ e }}</span>{% endfor %}
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Start date</label>
+          {{ form.start_date() }}
+          {% for e in form.start_date.errors %}<span class="field-errors">{{ e }}</span>{% endfor %}
+        </div>
+        <div class="form-group">
+          <label>End date</label>
+          {{ form.end_date() }}
+          {% for e in form.end_date.errors %}<span class="field-errors">{{ e }}</span>{% endfor %}
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Save changes</button>
+      <a class="btn btn-secondary" href="{{ url_for('admin.academic_years') }}">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,11 +1,12 @@
+import json
 from datetime import datetime, timedelta
-from flask import Blueprint, render_template, redirect, url_for, flash, request, abort
+from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, jsonify
 from flask_login import login_required, current_user
 
 from app.extensions import db
 from app.models import (
     User, TimetableSession, SessionInstance, StudentSubjectEnrollment,
-    AttendanceRecord, AttendanceAuditLog, Student
+    AttendanceRecord, AttendanceAuditLog, Student, RollCallDraft
 )
 from app.utils import roles_required, current_term
 from app.services.audit_service import log_attendance_change
@@ -118,6 +119,9 @@ def rollcall(session_instance_id):
         instance.submitted_by = current_user.id
         instance.submitted_at = datetime.utcnow()
         instance.was_late = was_flagged or datetime.utcnow() > instance.grace_deadline
+        draft = RollCallDraft.query.filter_by(session_instance_id=instance.id).first()
+        if draft:
+            db.session.delete(draft)
         db.session.commit()
         flash("Attendance submitted.", "success")
         return redirect(url_for("teacher.rollcall_success", session_instance_id=instance.id))
@@ -125,6 +129,63 @@ def rollcall(session_instance_id):
     return render_template(
         "teacher/rollcall.html", instance=instance, ts=ts, roster=roster, existing_records=existing_records
     )
+
+
+VALID_STATUSES = {"present", "absent", "late"}
+
+
+@teacher_bp.route("/sessions/<int:session_instance_id>/rollcall/draft", methods=["GET", "POST"])
+def rollcall_draft(session_instance_id):
+    """Server-side persistence for an in-progress roll call.
+
+    The rollcall page auto-saves selections here so they survive a refresh,
+    a browser crash, or the teacher switching devices — the localStorage copy
+    is only the first-level cache.
+    """
+    instance = SessionInstance.query.get_or_404(session_instance_id)
+    ts = instance.timetable_session
+    if ts.teacher_id != current_user.id:
+        abort(403)
+    if instance.status == SessionInstance.STATUS_SUBMITTED:
+        return jsonify({"error": "Roll call already submitted."}), 409
+
+    draft = RollCallDraft.query.filter_by(session_instance_id=instance.id).first()
+
+    if request.method == "POST":
+        try:
+            payload = request.get_json(force=True)
+        except Exception:
+            return jsonify({"error": "Invalid JSON body."}), 400
+        if not isinstance(payload, dict):
+            return jsonify({"error": "Expected a JSON object of student_id -> status."}), 400
+
+        roster_ids = {
+            e.student_id
+            for e in StudentSubjectEnrollment.query.filter_by(
+                subject_id=ts.subject_id, term_id=ts.term_id
+            ).all()
+        }
+        clean = {}
+        for key, value in payload.items():
+            try:
+                sid = int(key)
+            except (TypeError, ValueError):
+                continue
+            if sid in roster_ids and value in VALID_STATUSES:
+                clean[str(sid)] = value
+
+        if draft is None:
+            draft = RollCallDraft(
+                session_instance_id=instance.id, teacher_id=current_user.id, payload="{}"
+            )
+            db.session.add(draft)
+        draft.payload = json.dumps(clean)
+        draft.teacher_id = current_user.id
+        db.session.commit()
+        return jsonify({"ok": True, "saved": len(clean)})
+
+    # GET — return any saved draft for restore-on-load
+    return jsonify({"payload": json.loads(draft.payload) if draft else {}})
 
 
 @teacher_bp.route("/sessions/<int:session_instance_id>/rollcall/success")

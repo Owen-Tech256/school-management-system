@@ -34,13 +34,14 @@
     {% if years %}
     <div class="table-wrap">
       <table class="data-table">
-        <thead><tr><th>Label</th><th>Start</th><th>End</th></tr></thead>
+        <thead><tr><th>Label</th><th>Start</th><th>End</th><th></th></tr></thead>
         <tbody>
           {% for y in years %}
           <tr>
             <td>{{ y.label }}</td>
             <td class="cell-muted">{{ y.start_date.strftime('%d %b %Y') if y.start_date else "—" }}</td>
             <td class="cell-muted">{{ y.end_date.strftime('%d %b %Y') if y.end_date else "—" }}</td>
+            <td><a class="btn btn-secondary" href="{{ url_for('admin.academic_year_edit', year_id=y.id) }}">Edit</a></td>
           </tr>
           {% endfor %}
         </tbody>
